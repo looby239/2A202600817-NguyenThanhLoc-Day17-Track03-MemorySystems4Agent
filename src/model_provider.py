@@ -25,8 +25,20 @@ class ProviderConfig:
 
 def normalize_provider(value: str) -> str:
     """Student TODO: map aliases like `anthorpic` -> `anthropic`."""
-
-    raise NotImplementedError
+    val = value.strip().lower()
+    if val in ["openai", "open-ai"]:
+        return "openai"
+    elif val in ["gemini", "google", "google-genai"]:
+        return "gemini"
+    elif val in ["anthropic", "anthorpic"]:
+        return "anthropic"
+    elif val in ["ollama"]:
+        return "ollama"
+    elif val in ["openrouter"]:
+        return "openrouter"
+    elif val in ["custom"]:
+        return "custom"
+    return val
 
 
 def build_chat_model(config: ProviderConfig):
@@ -40,5 +52,28 @@ def build_chat_model(config: ProviderConfig):
     - `ollama` -> `ChatOllama`
     - `openrouter` -> `ChatOpenRouter`
     """
+    prov = normalize_provider(config.provider)
+    model_name = config.model_name
+    temp = config.temperature
 
-    raise NotImplementedError
+    if prov == "openai":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(model=model_name, temperature=temp, openai_api_key=config.api_key)
+    elif prov == "custom":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(model=model_name, temperature=temp, base_url=config.base_url, openai_api_key=config.api_key)
+    elif prov == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(model=model_name, temperature=temp, google_api_key=config.api_key)
+    elif prov == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+        return ChatAnthropic(model=model_name, temperature=temp, api_key=config.api_key)
+    elif prov == "ollama":
+        from langchain_ollama import ChatOllama
+        return ChatOllama(model=model_name, temperature=temp, base_url=config.base_url)
+    elif prov == "openrouter":
+        from langchain_openrouter import ChatOpenRouter
+        return ChatOpenRouter(model=model_name, temperature=temp, api_key=config.api_key)
+    else:
+        raise ValueError(f"Unsupported provider: {config.provider}")
+
